@@ -17,7 +17,7 @@ func (dec DefaultDecoder) Decode(r io.Reader, msg *Message) error {
 	if err != nil {
 		return err
 	}
-	msg.payload = buf[:n]
+	msg.Payload = buf[:n]
 	fmt.Println(string(buf[:n]))
 	return nil
 }
