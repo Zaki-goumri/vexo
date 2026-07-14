@@ -3,12 +3,29 @@ package main
 import (
 	"log"
 
+	"github.com/Zaki-goumri/vexo/internal/api"
+	"github.com/Zaki-goumri/vexo/internal/buckets"
+	"github.com/Zaki-goumri/vexo/internal/db"
 	"github.com/Zaki-goumri/vexo/internal/p2p"
 	"github.com/Zaki-goumri/vexo/internal/storage"
 )
 
 func main() {
-	s := storage.NewStore(storage.StoreOptions{})
+	meta := &db.DB{}
+	if err := meta.Open("volume/.vexo.meta.db"); err != nil {
+		log.Fatal(err)
+	}
+	defer meta.Close()
+
+	bucketStore := buckets.NewStore(meta, "volume")
+	store := storage.NewStore(meta, bucketStore, "volume")
+
+	httpSrv := api.NewServer(bucketStore, store, ":9000")
+	go func() {
+		if err := httpSrv.ListenAndServe(); err != nil {
+			log.Printf("http: %v", err)
+		}
+	}()
 
 	tcpOpts := p2p.TCPoptions{
 		ListenAddr: ":3001",
@@ -21,7 +38,7 @@ func main() {
 	tr := p2p.NewTCPTransport(tcpOpts)
 	go func() {
 		for rpc := range tr.Consume() {
-			storage.HandleRPC(s, rpc)
+			storage.HandleRPC(store, rpc)
 		}
 	}()
 	if err := tr.ListenAndAccept(); err != nil {
