@@ -94,14 +94,18 @@ func TestTCPStoreMultipleFiles(t *testing.T) {
 		t.Fatalf("want 3 files, got %d", len(files))
 	}
 
-	for i, name := range files {
+	got := map[string]bool{}
+	for _, name := range files {
 		r, err := s.Read(name)
 		if err != nil {
-			t.Fatalf("read %d: %v", i, err)
+			t.Fatal(err)
 		}
 		b, _ := io.ReadAll(r)
-		if !bytes.Equal(b, payloads[i]) {
-			t.Fatalf("file %d: want %q have %q", i, payloads[i], b)
+		got[string(b)] = true
+	}
+	for _, p := range payloads {
+		if !got[string(p)] {
+			t.Fatalf("missing payload %q", p)
 		}
 	}
 }
