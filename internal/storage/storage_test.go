@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ func TestStore(t *testing.T) {
 	s := NewStore(StoreOptions{})
 	original := []byte("some jpg bytes just to test")
 	data := bytes.NewReader(original)
-	meta, err := s.writeStream("mycv/test", data)
+	meta, err := s.WriteStream("mycv/test", data)
 	if err != nil {
 		t.Error(err)
 	}

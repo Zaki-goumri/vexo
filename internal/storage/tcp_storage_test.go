@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Zaki-goumri/vexo/p2p"
+	"github.com/Zaki-goumri/vexo/internal/p2p"
 )
 
 func TestTCPStoreFile(t *testing.T) {
@@ -24,7 +24,7 @@ func TestTCPStoreFile(t *testing.T) {
 	go func() {
 		for rpc := range tr.Consume() {
 			t.Logf("got rpc cmd=%d key=%q bytes=%d", rpc.Command, rpc.Key, len(rpc.Payload))
-			handleRPC(s, rpc)
+			HandleRPC(s, rpc)
 		}
 	}()
 

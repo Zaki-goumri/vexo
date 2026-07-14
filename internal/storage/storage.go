@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Zaki-goumri/vexo/internal/p2p"
 	"github.com/google/uuid"
 )
 
@@ -40,7 +41,7 @@ func (s *Store) objectPath(id string) string {
 	return filepath.Join(s.volumeRoot, id)
 }
 
-func (s *Store) writeStream(key string, r io.Reader) (*MetaData, error) {
+func (s *Store) WriteStream(key string, r io.Reader) (*MetaData, error) {
 	if err := os.MkdirAll(s.volumeRoot, os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -89,4 +90,18 @@ func (s *Store) Delete(id string) error {
 
 func (s *Store) readStream(id string) (io.ReadCloser, error) {
 	return os.Open(s.objectPath(id))
+}
+
+func HandleRPC(s *Store, rpc p2p.RPC) {
+	switch rpc.Command {
+	case p2p.CommandStoreFile:
+		_, err := s.WriteStream(rpc.Key, bytes.NewReader(rpc.Payload))
+		if err != nil {
+			log.Printf("store %s failed: %v", rpc.Key, err)
+			return
+		}
+		fmt.Printf("stored key=%s from=%s (%d bytes)\n", rpc.Key, rpc.From, len(rpc.Payload))
+	default:
+		log.Printf("unknown command %d from %s", rpc.Command, rpc.From)
+	}
 }

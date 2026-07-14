@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/Zaki-goumri/vexo/p2p"
+	"github.com/Zaki-goumri/vexo/internal/p2p"
 )
 
 const usage = `vexo client
