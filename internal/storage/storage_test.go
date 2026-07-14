@@ -3,26 +3,28 @@ package storage
 import (
 	"bytes"
 	"io"
+	"path/filepath"
 	"testing"
 )
 
 func TestStore(t *testing.T) {
-	s := NewStore(StoreOptions{})
+	volumeDir := filepath.Join(t.TempDir(), "volume")
+	s := NewStoreWithRoot(volumeDir, StoreOptions{})
 	original := []byte("some jpg bytes just to test")
 	data := bytes.NewReader(original)
 	meta, err := s.WriteStream("mycv/test", data)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	r, err := s.Read(meta.id)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	b, _ := io.ReadAll(r)
-	if string(b) != string(original) {
-		t.Errorf(" want %s have %s", original, b)
+	if !bytes.Equal(b, original) {
+		t.Errorf("want %q have %q", original, b)
 	}
 
 	if err := s.Delete(meta.id); err != nil {

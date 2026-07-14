@@ -32,6 +32,14 @@ func NewStore(opts StoreOptions) *Store {
 	return &Store{volumeRoot: "volume", StoreOpts: opts}
 }
 
+func NewStoreWithRoot(root string, opts StoreOptions) *Store {
+	return &Store{volumeRoot: root, StoreOpts: opts}
+}
+
+func (s *Store) VolumeRoot() string {
+	return s.volumeRoot
+}
+
 func (s *Store) SaveFileMetaData(meta *MetaData) error {
 	return nil
 }
@@ -51,11 +59,10 @@ func (s *Store) WriteStream(key string, r io.Reader) (*MetaData, error) {
 		return nil, err
 	}
 	defer f.Close()
-	n, err := io.Copy(f, r)
+	_, err = io.Copy(f, r)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("written (%d) bytes to disk file: %s", n, id)
 
 	savedMeta := &MetaData{
 		OriginalKey: key,
@@ -84,7 +91,6 @@ func (s *Store) Delete(id string) error {
 	if err := os.Remove(s.objectPath(id)); err != nil {
 		return fmt.Errorf("delete %s: %w", id, err)
 	}
-	log.Printf("deleted [%s] from disk", id)
 	return nil
 }
 
@@ -100,7 +106,6 @@ func HandleRPC(s *Store, rpc p2p.RPC) {
 			log.Printf("store %s failed: %v", rpc.Key, err)
 			return
 		}
-		fmt.Printf("stored key=%s from=%s (%d bytes)\n", rpc.Key, rpc.From, len(rpc.Payload))
 	default:
 		log.Printf("unknown command %d from %s", rpc.Command, rpc.From)
 	}

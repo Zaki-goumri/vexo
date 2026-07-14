@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"fmt"
 	"net"
 )
 
@@ -62,7 +61,7 @@ func (t *TCPTransport) startAcceptLoop() {
 	for {
 		conn, err := t.listeners.Accept()
 		if err != nil {
-			fmt.Printf("tcp transport couldnt accept :%s\n ", err)
+			continue
 		}
 		go t.handleConn(conn)
 	}
@@ -71,13 +70,11 @@ func (t *TCPTransport) startAcceptLoop() {
 func (t *TCPTransport) handleConn(conn net.Conn) {
 	var err error
 	defer func() {
-		fmt.Printf("dropping peer connection, connection closed %s\n", err)
 		conn.Close()
 	}()
 	peer := NewTCPPeer(conn, true)
 	if err = t.Config.Handshaker(peer); err != nil {
 		conn.Close()
-		fmt.Printf("tcp error, connection closed %s\n", err)
 		return
 	}
 	if t.Config.OnPeer != nil {
@@ -89,7 +86,6 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 	for {
 		err := t.Config.Decoder.Decode(conn, rpc)
 		if err != nil {
-			fmt.Printf("tcp read err: %s\n", err)
 			return
 		}
 		rpc.From = conn.RemoteAddr()

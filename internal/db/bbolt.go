@@ -38,7 +38,7 @@ func (d *DB) Open(path string) error {
 	if path == "" {
 		path = defaultDBPath
 	}
-	boltDB, err := bbolt.Open(path, 0600, &bbolt.Options{Timeout: 60 * time.Second})
+	boltDB, err := bbolt.Open(path, 0600, &bbolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		return fmt.Errorf("error in db %s:%w", path, err)
 	}
