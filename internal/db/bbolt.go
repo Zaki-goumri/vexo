@@ -15,6 +15,7 @@ var bucketNames = []string{
 	"buckets",
 	"objects",
 	"users",
+	"accesskeys",
 	"groups",
 	"policies",
 	"tiers",

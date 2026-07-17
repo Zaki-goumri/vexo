@@ -6,6 +6,7 @@ import (
 	"github.com/Zaki-goumri/vexo/internal/api"
 	"github.com/Zaki-goumri/vexo/internal/buckets"
 	"github.com/Zaki-goumri/vexo/internal/db"
+	"github.com/Zaki-goumri/vexo/internal/iam"
 	"github.com/Zaki-goumri/vexo/internal/p2p"
 	"github.com/Zaki-goumri/vexo/internal/storage"
 )
@@ -16,6 +17,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer meta.Close()
+
+	iamStore := iam.NewStore(meta)
+	if err := iamStore.BootstrapRoot("volume"); err != nil {
+		log.Fatal(err)
+	}
 
 	bucketStore := buckets.NewStore(meta, "volume")
 	store := storage.NewStore(meta, bucketStore, "volume")
