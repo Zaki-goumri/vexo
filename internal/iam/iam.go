@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/Zaki-goumri/vexo/internal/db"
-	"golang.org/x/crypto/argon2"
 )
 
 var (
@@ -27,13 +26,8 @@ const (
 	StatusActive   = "active"
 	StatusDisabled = "disabled"
 
-	accessKeyLen  = 20
-	secretLen     = 40
-	saltLen       = 16
-	argonTime     = 1
-	argonMemory   = 64 * 1024
-	argonThreads  = 1
-	argonKeyLen   = 32
+	accessKeyLen = 20
+	secretLen    = 40
 )
 
 type User struct {
@@ -46,12 +40,11 @@ type User struct {
 }
 
 type AccessKey struct {
-	AccessKey string    `json:"accessKey"`
-	Secret    string    `json:"secret"`
-	Salt      []byte    `json:"salt"`
-	Username  string    `json:"username"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"createdAt"`
+	AccessKey   string    `json:"accessKey"`
+	PlainSecret string    `json:"plainSecret"`
+	Username    string    `json:"username"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type Group struct {
@@ -75,20 +68,6 @@ func randomString(n int) (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b)[:n], nil
-}
-
-func hashSecret(secret string) (hash []byte, salt []byte, err error) {
-	salt = make([]byte, saltLen)
-	if _, err := rand.Read(salt); err != nil {
-		return nil, nil, err
-	}
-	hash = argon2.IDKey([]byte(secret), salt, argonTime, argonMemory, argonThreads, argonKeyLen)
-	return hash, salt, nil
-}
-
-func verifySecret(secret string, hash, salt []byte) bool {
-	computed := argon2.IDKey([]byte(secret), salt, argonTime, argonMemory, argonThreads, argonKeyLen)
-	return subtle.ConstantTimeCompare(hash, computed) == 1
 }
 
 func (s *Store) CreateUser(username string) (*User, error) {
@@ -191,17 +170,12 @@ func (s *Store) CreateAccessKey(username string) (*AccessKey, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	hash, salt, err := hashSecret(plaintextSecret)
-	if err != nil {
-		return nil, "", err
-	}
 	ak := &AccessKey{
-		AccessKey: accessKeyID,
-		Secret:    base64.StdEncoding.EncodeToString(hash),
-		Salt:      salt,
-		Username:  username,
-		Status:    StatusActive,
-		CreatedAt: time.Now(),
+		AccessKey:   accessKeyID,
+		PlainSecret: plaintextSecret,
+		Username:    username,
+		Status:      StatusActive,
+		CreatedAt:   time.Now(),
 	}
 	data, err := json.Marshal(ak)
 	if err != nil {
@@ -258,11 +232,7 @@ func (s *Store) ValidateSecret(accessKeyID, plaintextSecret string) (bool, error
 	if err != nil {
 		return false, err
 	}
-	hash, err := base64.StdEncoding.DecodeString(ak.Secret)
-	if err != nil {
-		return false, fmt.Errorf("decode hash: %w", err)
-	}
-	return verifySecret(plaintextSecret, hash, ak.Salt), nil
+	return subtle.ConstantTimeCompare([]byte(ak.PlainSecret), []byte(plaintextSecret)) == 1, nil
 }
 
 func (s *Store) CreateGroup(name string) (*Group, error) {

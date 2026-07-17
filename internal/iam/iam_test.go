@@ -99,8 +99,8 @@ func TestCreateAccessKey(t *testing.T) {
 	if secret == "" {
 		t.Fatal("plaintext secret is empty")
 	}
-	if ak.Secret == secret {
-		t.Fatal("stored secret should be hashed, not plaintext")
+	if ak.PlainSecret != secret {
+		t.Fatalf("stored secret should match plaintext (needed for SigV4)")
 	}
 	if ak.Username != "alice" {
 		t.Fatalf("username: got %q, want %q", ak.Username, "alice")
