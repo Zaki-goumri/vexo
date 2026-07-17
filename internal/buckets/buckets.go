@@ -43,6 +43,10 @@ func NewStore(meta *db.DB, root string) *Store {
 	}
 }
 
+func (s *Store) Meta() *db.DB {
+	return s.meta
+}
+
 func NewBucketConfig(name string) *BucketConfig {
 	return &BucketConfig{
 		Name:      name,

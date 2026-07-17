@@ -224,14 +224,20 @@ func TestPolicyDeny(t *testing.T) {
 	t.Cleanup(func() { ts.Close() })
 
 	req := signReq(t, "GET", "/test-bkt/cat.jpg", ts.Listener.Addr().String(), ak, secret, nil)
-	resp, _ := ts.Client().Do(req)
+	resp, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("get should be allowed, got %d", resp.StatusCode)
 	}
 
 	req = signReq(t, "PUT", "/test-bkt/dog.jpg", ts.Listener.Addr().String(), ak, secret, []byte("data"))
-	resp, _ = ts.Client().Do(req)
+	resp, err = ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("put should be denied, got %d", resp.StatusCode)

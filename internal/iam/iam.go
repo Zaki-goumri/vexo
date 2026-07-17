@@ -344,7 +344,7 @@ func (s *Store) BootstrapRoot(rootDir string) error {
 
 	username := os.Getenv("VEXO_ROOT_USER")
 	if username == "" {
-		username = "vexo"
+		username = "zaki"
 	}
 
 	u, err := s.CreateUser(username)

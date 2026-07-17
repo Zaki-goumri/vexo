@@ -256,11 +256,11 @@ func TestBootstrapRootCreatesUserAndKey(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatalf("want 1 user, got %d", len(users))
 	}
-	if users[0].Username != "vexo" {
-		t.Fatalf("username: got %q, want %q", users[0].Username, "vexo")
+	if users[0].Username != "zaki" {
+		t.Fatalf("username: got %q, want %q", users[0].Username, "zaki")
 	}
 
-	keys, _ := s.ListAccessKeys("vexo")
+	keys, _ := s.ListAccessKeys("zaki")
 	if len(keys) != 1 {
 		t.Fatalf("want 1 access key, got %d", len(keys))
 	}
