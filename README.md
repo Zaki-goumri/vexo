@@ -1,6 +1,6 @@
 <p align="center">
   <!-- LOGO_SPACE: swap logo.png below with the generated gopher-stealing-a-bucket logo -->
-  <img src="logo.png" alt="vexo logo" width="360">
+  <img src="logo.jpg" alt="vexo logo" width="360">
 </p>
 
 # vexo
@@ -64,15 +64,15 @@ make test
 
 Ports are currently fixed (not yet flag-configurable):
 
-| Service              | Address  |
-|----------------------|----------|
-| S3 HTTP API          | `:9090`  |
-| Web console          | `:9091`  |
-| Internal TCP ingest  | `:3001`  |
+| Service             | Address |
+| ------------------- | ------- |
+| S3 HTTP API         | `:9090` |
+| Web console         | `:9091` |
+| Internal TCP ingest | `:3001` |
 
-| Env var | Required | Description |
-|---------|----------|-------------|
-| `VEXO_ROOT_USER` | No | Username for the bootstrapped root IAM user. Defaults to `zaki`. Only read on first start, when no IAM users exist yet. |
+| Env var          | Required | Description                                                                                                             |
+| ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `VEXO_ROOT_USER` | No       | Username for the bootstrapped root IAM user. Defaults to `zaki`. Only read on first start, when no IAM users exist yet. |
 
 ## Disk layout
 
