@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { refreshSession } from './session'
 import Login from './views/Login.vue'
 import Layout from './views/Layout.vue'
 import Buckets from './views/Buckets.vue'
@@ -30,15 +31,8 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   if (to.meta.public) return
-  try {
-    const resp = await fetch('/api/session', { credentials: 'same-origin' })
-    const data = await resp.json()
-    if (!data.authenticated) {
-      return '/login'
-    }
-  } catch {
-    return '/login'
-  }
+  const ok = await refreshSession()
+  if (!ok) return '/login'
 })
 
 export default router

@@ -1,21 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { api } from '../api'
-
-interface User {
-  Username: string
-  Status: string
-}
-interface KeyInfo {
-  accessKey: string
-  username: string
-  status: string
-  createdAt: string
-}
-interface CreatedKey {
-  accessKey: string
-  secret: string
-}
+import { listUsers, listKeys, createKey, deleteKey, type User, type KeyInfo, type CreatedKey } from '../api'
+import Icon from '../components/Icon.vue'
+import Modal from '../components/Modal.vue'
+import Badge from '../components/Badge.vue'
+import EmptyState from '../components/EmptyState.vue'
 
 const users = ref<User[]>([])
 const allKeys = ref<KeyInfo[]>([])
@@ -26,10 +15,10 @@ const createdKey = ref<CreatedKey | null>(null)
 
 async function load() {
   try {
-    users.value = await api.get<User[]>('/users')
+    users.value = await listUsers()
     allKeys.value = []
     for (const u of users.value) {
-      const keys = await api.get<KeyInfo[]>(`/users/${u.Username}/keys`)
+      const keys = await listKeys(u.username)
       allKeys.value.push(...keys)
     }
   } catch (e: any) {
@@ -39,10 +28,10 @@ async function load() {
 
 onMounted(load)
 
-async function createKey() {
+async function create() {
   error.value = ''
   try {
-    createdKey.value = await api.post<CreatedKey>(`/users/${selectedUser.value}/keys`)
+    createdKey.value = await createKey(selectedUser.value)
     showCreate.value = false
     await load()
   } catch (e: any) {
@@ -53,7 +42,7 @@ async function createKey() {
 async function removeKey(id: string) {
   if (!confirm(`Delete access key "${id}"?`)) return
   try {
-    await api.del(`/keys/${id}`)
+    await deleteKey(id)
     await load()
   } catch (e: any) {
     error.value = e.message
@@ -65,61 +54,55 @@ async function removeKey(id: string) {
   <div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
       <h2 style="font-size: 20px;">Access Keys</h2>
-      <button class="primary" @click="showCreate = true">Create Access Key</button>
+      <button class="primary" @click="showCreate = true">Create Access Key +</button>
     </div>
     <div v-if="error" style="color: var(--danger); margin-bottom: 16px;">{{ error }}</div>
-    <div class="card">
+    <div class="card" style="padding: 0;">
       <table v-if="allKeys.length > 0">
         <thead>
-          <tr><th>Access Key</th><th>User</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+          <tr><th>Access Key</th><th>User</th><th>Status</th><th>Created</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="k in allKeys" :key="k.accessKey">
-            <td style="font-family: monospace; font-size: 12px;">{{ k.accessKey }}</td>
+            <td style="display: flex; align-items: center; gap: 10px; font-family: monospace; font-size: 12px;"><Icon name="key" :size="14" /> {{ k.accessKey }}</td>
             <td>{{ k.username }}</td>
-            <td>
-              <span :style="{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: k.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)', color: k.status === 'active' ? 'var(--success)' : 'var(--danger)' }">{{ k.status }}</span>
-            </td>
+            <td><Badge :tone="k.status === 'active' ? 'success' : 'danger'">{{ k.status }}</Badge></td>
             <td style="color: var(--text2);">{{ k.createdAt }}</td>
-            <td><button class="danger" @click="removeKey(k.accessKey)">Delete</button></td>
+            <td style="text-align: right;"><button class="danger" @click="removeKey(k.accessKey)"><Icon name="trash" :size="14" /></button></td>
           </tr>
         </tbody>
       </table>
-      <div v-else style="color: var(--text2); text-align: center; padding: 24px;">No access keys</div>
+      <EmptyState v-else text="No access keys" />
     </div>
 
-    <div v-if="showCreate" class="modal-overlay" @click.self="showCreate = false">
-      <div class="card" style="width: 400px;">
-        <h3 style="margin-bottom: 16px;">Create Access Key</h3>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 6px; color: var(--text2); font-size: 12px;">User</label>
-          <select v-model="selectedUser" style="width: 100%; padding: 8px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius);">
-            <option v-for="u in users" :key="u.Username" :value="u.Username">{{ u.Username }}</option>
-          </select>
+    <Modal v-if="showCreate" title="Create Access Key" @close="showCreate = false">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 6px; color: var(--text2); font-size: 12px;">User</label>
+        <select v-model="selectedUser">
+          <option v-for="u in users" :key="u.username" :value="u.username">{{ u.username }}</option>
+        </select>
+      </div>
+      <template #footer>
+        <button class="secondary" @click="showCreate = false" style="flex: 1;">Cancel</button>
+        <button class="primary" @click="create" style="flex: 1;" :disabled="!selectedUser">Create</button>
+      </template>
+    </Modal>
+
+    <Modal v-if="createdKey" title="Access Key Created" @close="createdKey = null">
+      <p style="color: var(--danger); font-size: 12px; margin-bottom: 16px;">⚠ Save these credentials now — the secret will not be shown again.</p>
+      <div style="background: var(--surface2); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
+        <div style="margin-bottom: 8px;">
+          <span style="color: var(--text2); font-size: 12px;">Access Key:</span>
+          <code style="display: block; margin-top: 4px; font-family: monospace; word-break: break-all;">{{ createdKey.accessKey }}</code>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="secondary" @click="showCreate = false" style="flex: 1;">Cancel</button>
-          <button class="primary" @click="createKey" style="flex: 1;" :disabled="!selectedUser">Create</button>
+        <div>
+          <span style="color: var(--text2); font-size: 12px;">Secret:</span>
+          <code style="display: block; margin-top: 4px; font-family: monospace; word-break: break-all; color: var(--accent);">{{ createdKey.secret }}</code>
         </div>
       </div>
-    </div>
-
-    <div v-if="createdKey" class="modal-overlay" @click.self="createdKey = null">
-      <div class="card" style="width: 460px;">
-        <h3 style="margin-bottom: 8px;">Access Key Created</h3>
-        <p style="color: var(--danger); font-size: 12px; margin-bottom: 16px;">⚠ Save these credentials now — the secret will not be shown again.</p>
-        <div style="background: var(--surface2); padding: 12px; border-radius: var(--radius); margin-bottom: 16px;">
-          <div style="margin-bottom: 8px;">
-            <span style="color: var(--text2); font-size: 12px;">Access Key:</span>
-            <code style="display: block; margin-top: 4px; font-family: monospace; word-break: break-all;">{{ createdKey.accessKey }}</code>
-          </div>
-          <div>
-            <span style="color: var(--text2); font-size: 12px;">Secret:</span>
-            <code style="display: block; margin-top: 4px; font-family: monospace; word-break: break-all; color: var(--accent);">{{ createdKey.secret }}</code>
-          </div>
-        </div>
+      <template #footer>
         <button class="primary" style="width: 100%;" @click="createdKey = null">I've saved them</button>
-      </div>
-    </div>
+      </template>
+    </Modal>
   </div>
 </template>
