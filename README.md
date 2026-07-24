@@ -1,6 +1,6 @@
 <p align="center">
   <!-- LOGO_SPACE: swap logo.png below with the generated gopher-stealing-a-bucket logo -->
-  <img src="logo.jpg" alt="vexo logo" width="360">
+  <img src="logo.png" alt="vexo logo" width="360">
 </p>
 
 # vexo
