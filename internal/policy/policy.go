@@ -94,7 +94,7 @@ func (s *Store) Delete(name string) error {
 }
 
 func (s *Store) List() ([]*Policy, error) {
-	var policies []*Policy
+	policies := []*Policy{}
 	err := s.meta.ForEach("policies", func(k, v []byte) error {
 		var p Policy
 		if err := json.Unmarshal(v, &p); err != nil {

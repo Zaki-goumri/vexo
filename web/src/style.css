@@ -5,8 +5,8 @@
   --border: #e2e4e9;
   --text: #1a1d29;
   --text2: #6b7280;
-  --accent: #c6302b;
-  --accent-hover: #a8271f;
+  --accent: #217d8c;
+  --accent-hover: #1a606b;
   --danger: #d64545;
   --success: #1a9e6b;
   --radius: 6px;
@@ -91,11 +91,11 @@ tr:hover { background: var(--surface2); }
   padding: 24px;
 }
 
-.modal-overlay {
+.vx-dialog-backdrop {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(20,21,26,0.5);
   display: flex; align-items: center; justify-content: center;
-  z-index: 100;
+  z-index: 9999;
 }
 
 .badge {

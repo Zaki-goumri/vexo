@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { listBuckets, createBucket, deleteBucket, type Bucket } from '../api'
+import { listBuckets, createBucket, deleteBucket, setBucketPublic, type Bucket } from '../api'
 import Icon from '../components/Icon.vue'
 import Modal from '../components/Modal.vue'
+import Badge from '../components/Badge.vue'
 import EmptyState from '../components/EmptyState.vue'
 
 const router = useRouter()
@@ -43,6 +44,18 @@ async function remove(name: string) {
     error.value = e.message
   }
 }
+
+async function toggleVisibility(b: Bucket) {
+  const makingPublic = !b.Public
+  if (makingPublic && !confirm(`Make "${b.Name}" public? Anyone with a link will be able to read its objects without logging in.`)) return
+  error.value = ''
+  try {
+    await setBucketPublic(b.Name, makingPublic)
+    await load()
+  } catch (e: any) {
+    error.value = e.message
+  }
+}
 </script>
 
 <template>
@@ -55,7 +68,7 @@ async function remove(name: string) {
     <div class="card" style="padding: 0;">
       <table v-if="buckets.length > 0">
         <thead>
-          <tr><th>Name</th><th>Created</th><th></th></tr>
+          <tr><th>Name</th><th>Visibility</th><th>Created</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="b in buckets" :key="b.Name">
@@ -63,6 +76,11 @@ async function remove(name: string) {
               <a @click="router.push(`/buckets/${b.Name}`)" style="cursor: pointer; display: flex; align-items: center; gap: 10px; color: var(--text);">
                 <Icon name="bucket" :size="16" />
                 {{ b.Name }}
+              </a>
+            </td>
+            <td>
+              <a @click="toggleVisibility(b)" style="cursor: pointer;">
+                <Badge :tone="b.Public ? 'success' : 'neutral'">{{ b.Public ? 'Public' : 'Private' }}</Badge>
               </a>
             </td>
             <td style="color: var(--text2);">{{ new Date(b.CreatedAt).toLocaleString() }}</td>

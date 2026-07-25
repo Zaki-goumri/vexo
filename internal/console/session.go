@@ -9,7 +9,6 @@ import (
 
 type Session struct {
 	Username  string
-	AccessKey string
 	CreatedAt time.Time
 }
 
@@ -24,7 +23,7 @@ func NewSessionStore() *SessionStore {
 	}
 }
 
-func (s *SessionStore) Create(username, accessKey string) (string, error) {
+func (s *SessionStore) Create(username string) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -33,7 +32,6 @@ func (s *SessionStore) Create(username, accessKey string) (string, error) {
 	s.mu.Lock()
 	s.sessions[token] = &Session{
 		Username:  username,
-		AccessKey: accessKey,
 		CreatedAt: time.Now(),
 	}
 	s.mu.Unlock()

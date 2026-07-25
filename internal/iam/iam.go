@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Zaki-goumri/vexo/internal/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -31,12 +32,13 @@ const (
 )
 
 type User struct {
-	Username  string    `json:"username"`
-	Status    string    `json:"status"`
-	Groups   []string  `json:"groups"`
-	Policies []string  `json:"policies"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	Username     string    `json:"username"`
+	Status       string    `json:"status"`
+	Groups       []string  `json:"groups"`
+	Policies     []string  `json:"policies"`
+	PasswordHash string    `json:"passwordHash,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
 type AccessKey struct {
@@ -113,7 +115,7 @@ func (s *Store) GetUser(username string) (*User, error) {
 }
 
 func (s *Store) ListUsers() ([]*User, error) {
-	var users []*User
+	users := []*User{}
 	err := s.meta.ForEach("users", func(_, v []byte) error {
 		var u User
 		if err := json.Unmarshal(v, &u); err != nil {
@@ -150,6 +152,20 @@ func (s *Store) SetUserStatus(username, status string) error {
 		return err
 	}
 	u.Status = status
+	u.UpdatedAt = time.Now()
+	data, err := json.Marshal(u)
+	if err != nil {
+		return err
+	}
+	return s.meta.Put("users", username, data)
+}
+
+func (s *Store) SetUserPolicies(username string, policies []string) error {
+	u, err := s.GetUser(username)
+	if err != nil {
+		return err
+	}
+	u.Policies = policies
 	u.UpdatedAt = time.Now()
 	data, err := json.Marshal(u)
 	if err != nil {
@@ -203,7 +219,7 @@ func (s *Store) GetAccessKey(accessKeyID string) (*AccessKey, error) {
 }
 
 func (s *Store) ListAccessKeys(username string) ([]*AccessKey, error) {
-	var keys []*AccessKey
+	keys := []*AccessKey{}
 	err := s.meta.ForEach("accesskeys", func(_, v []byte) error {
 		var ak AccessKey
 		if err := json.Unmarshal(v, &ak); err != nil {
@@ -233,6 +249,38 @@ func (s *Store) ValidateSecret(accessKeyID, plaintextSecret string) (bool, error
 		return false, err
 	}
 	return subtle.ConstantTimeCompare([]byte(ak.PlainSecret), []byte(plaintextSecret)) == 1, nil
+}
+
+func (s *Store) SetPassword(username, plaintextPassword string) error {
+	u, err := s.GetUser(username)
+	if err != nil {
+		return err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.PasswordHash = string(hash)
+	u.UpdatedAt = time.Now()
+	data, err := json.Marshal(u)
+	if err != nil {
+		return err
+	}
+	return s.meta.Put("users", username, data)
+}
+
+func (s *Store) ValidatePassword(username, plaintextPassword string) (bool, error) {
+	u, err := s.GetUser(username)
+	if err != nil {
+		return false, err
+	}
+	if u.PasswordHash == "" {
+		return false, nil
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(plaintextPassword)); err != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (s *Store) CreateGroup(name string) (*Group, error) {
@@ -275,7 +323,7 @@ func (s *Store) GetGroup(name string) (*Group, error) {
 }
 
 func (s *Store) ListGroups() ([]*Group, error) {
-	var groups []*Group
+	groups := []*Group{}
 	err := s.meta.ForEach("groups", func(_, v []byte) error {
 		var g Group
 		if err := json.Unmarshal(v, &g); err != nil {
@@ -376,13 +424,26 @@ func (s *Store) BootstrapRoot(rootDir string) error {
 	}
 	akID := accessKeys[0].AccessKey
 
+	password := os.Getenv("VEXO_ROOT_PASSWORD")
+	if password == "" {
+		password, err = randomString(20)
+		if err != nil {
+			return err
+		}
+	}
+	if err := s.SetPassword(username, password); err != nil {
+		return err
+	}
+
 	keyFile := filepath.Join(rootDir, ".vexo.root.key")
-	creds := fmt.Sprintf("%s:%s\n", akID, plaintextSecret)
+	creds := fmt.Sprintf("username=%s\npassword=%s\naccessKey=%s\nsecret=%s\n", username, password, akID, plaintextSecret)
 	if err := os.WriteFile(keyFile, []byte(creds), 0o600); err != nil {
 		return fmt.Errorf("write root key file: %w", err)
 	}
 
 	fmt.Printf("=== Vexo root credentials ===\n")
+	fmt.Printf("Username:   %s\n", username)
+	fmt.Printf("Password:   %s\n", password)
 	fmt.Printf("Access Key: %s\n", akID)
 	fmt.Printf("Secret:     %s\n", plaintextSecret)
 	fmt.Printf("Saved to:   %s\n", keyFile)

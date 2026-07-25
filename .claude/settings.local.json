@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/zaki/projects/vexo/**)",
+      "Bash(go build *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

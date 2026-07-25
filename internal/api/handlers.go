@@ -187,7 +187,7 @@ func (s *Server) putObject(w http.ResponseWriter, r *http.Request) {
 	bucket := r.PathValue("bucket")
 	key := r.PathValue("key")
 
-	meta, err := s.storage.Put(bucket, key, r.Body)
+	meta, err := s.storage.Put(bucket, key, r.Body, r.Header.Get("Content-Type"))
 	if err != nil {
 		switch {
 		case errors.Is(err, storage.ErrBucketNotFound):

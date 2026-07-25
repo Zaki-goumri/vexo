@@ -78,7 +78,7 @@ func (s *Store) objectPath(bucket, id, tier string) string {
 	}
 }
 
-func (s *Store) Put(bucket, key string, r io.Reader) (*ObjectMeta, error) {
+func (s *Store) Put(bucket, key string, r io.Reader, contentType string) (*ObjectMeta, error) {
 	if _, err := s.bucketStore.Get(bucket); err != nil {
 		if errors.Is(err, buckets.ErrBucketNotFound) {
 			return nil, ErrBucketNotFound
@@ -118,6 +118,7 @@ func (s *Store) Put(bucket, key string, r io.Reader) (*ObjectMeta, error) {
 		Key:            key,
 		Size:           n,
 		ETag:           etag,
+		ContentType:    contentType,
 		Tier:           TierHot,
 		CreatedAt:      now,
 		LastAccessedAt: now,
@@ -222,13 +223,48 @@ func (s *Store) Delete(bucket, key string) error {
 	return nil
 }
 
+func (s *Store) Rename(bucket, oldKey, newKey string) (*ObjectMeta, error) {
+	metaJSON, err := s.meta.Get("objects", bucket+"/"+oldKey)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return nil, ErrObjectNotFound
+		}
+		return nil, err
+	}
+
+	if _, err := s.meta.Get("objects", bucket+"/"+newKey); err == nil {
+		return nil, fmt.Errorf("an object already exists at %q", newKey)
+	} else if !errors.Is(err, db.ErrNotFound) {
+		return nil, err
+	}
+
+	var meta ObjectMeta
+	if err := json.Unmarshal(metaJSON, &meta); err != nil {
+		return nil, fmt.Errorf("unmarshal meta: %w", err)
+	}
+	meta.Key = newKey
+
+	updatedJSON, err := json.Marshal(&meta)
+	if err != nil {
+		return nil, fmt.Errorf("marshal meta: %w", err)
+	}
+	if err := s.meta.Put("objects", bucket+"/"+newKey, updatedJSON); err != nil {
+		return nil, err
+	}
+	if err := s.meta.Delete("objects", bucket+"/"+oldKey); err != nil {
+		return nil, err
+	}
+
+	return &meta, nil
+}
+
 func (s *Store) List(bucket, prefix string) ([]*ObjectMeta, error) {
 	searchKey := bucket + "/"
 	if prefix != "" {
 		searchKey += prefix
 	}
 
-	var results []*ObjectMeta
+	results := []*ObjectMeta{}
 	err := s.meta.ForEach("objects", func(k, v []byte) error {
 		if !strings.HasPrefix(string(k), searchKey) {
 			return nil
@@ -343,7 +379,7 @@ func HandleRPC(s *Store, rpc p2p.RPC) {
 	switch rpc.Command {
 	case p2p.CommandStoreFile:
 		bucket, key := splitKey(rpc.Key)
-		_, err := s.Put(bucket, key, bytes.NewReader(rpc.Payload))
+		_, err := s.Put(bucket, key, bytes.NewReader(rpc.Payload), "")
 		if err != nil {
 			log.Printf("store %s/%s failed: %v", bucket, key, err)
 			return

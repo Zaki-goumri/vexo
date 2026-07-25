@@ -18,6 +18,7 @@ var bucketNameRE = regexp.MustCompile(`^[a-z0-9-]+$`)
 type BucketConfig struct {
 	Name       string
 	Versioning bool
+	Public     bool
 	Lifecycle  []byte
 	Tags       map[string]string
 	CreatedAt  time.Time
@@ -96,8 +97,24 @@ func (s *Store) Get(name string) (*BucketConfig, error) {
 	return &result, nil
 }
 
+func (s *Store) SetPublic(name string, public bool) (*BucketConfig, error) {
+	cfg, err := s.Get(name)
+	if err != nil {
+		return nil, err
+	}
+	cfg.Public = public
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.meta.Put("buckets", name, data); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
 func (s *Store) List() ([]*BucketConfig, error) {
-	var buckets []*BucketConfig
+	buckets := []*BucketConfig{}
 	err := s.meta.ForEach("buckets", func(k, v []byte) error {
 		var cfg BucketConfig
 		if err := json.Unmarshal(v, &cfg); err != nil {

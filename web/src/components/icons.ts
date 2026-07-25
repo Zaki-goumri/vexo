@@ -8,6 +8,8 @@ export const icons: Record<string, string> = {
   upload: 'M12 4v11 M7 9l5-5 5 5 M5 20h14',
   download: 'M12 4v11 M7 11l5 5 5-5 M5 20h14',
   trash: 'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13',
+  rename: 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z M14.5 5.5l3 3',
+  share: 'M18 8a2.5 2.5 0 1 0-2.4-3.2 M18 20a2.5 2.5 0 1 0 0-5 M6 14.5a2.5 2.5 0 1 0 0-5 M8.2 12.3l7.6 4.4 M15.8 6.8 8.2 11.2',
   logout: 'M9 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4 M16 17l5-5-5-5 M21 12H9',
   chevron: 'M9 6l6 6-6 6',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z M21 21l-4.3-4.3',

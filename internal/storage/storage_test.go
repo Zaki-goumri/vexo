@@ -30,7 +30,7 @@ func TestPutGet(t *testing.T) {
 	}
 
 	payload := []byte("hello vexo")
-	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload))
+	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload), "")
 	if err != nil {
 		t.Fatalf("put: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestPutGet(t *testing.T) {
 func TestPutMissingBucket(t *testing.T) {
 	s := newTestStore(t)
 
-	_, err := s.Put("ghost", "file.jpg", bytes.NewReader([]byte("data")))
+	_, err := s.Put("ghost", "file.jpg", bytes.NewReader([]byte("data")), "")
 	if err != ErrBucketNotFound {
 		t.Fatalf("want ErrBucketNotFound, got %v", err)
 	}
@@ -92,7 +92,7 @@ func TestDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data"))); err != nil {
+	if _, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,7 +125,7 @@ func TestListWithPrefix(t *testing.T) {
 	}
 
 	for _, key := range []string{"cat.jpg", "dog.jpg", "bird.png"} {
-		if _, err := s.Put("photos", key, bytes.NewReader([]byte(key))); err != nil {
+		if _, err := s.Put("photos", key, bytes.NewReader([]byte(key)), ""); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -159,7 +159,7 @@ func TestAccessTracking(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meta, err := s.Put("photos", "track.jpg", bytes.NewReader([]byte("data")))
+	meta, err := s.Put("photos", "track.jpg", bytes.NewReader([]byte("data")), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestTransitionHotToCold(t *testing.T) {
 	}
 
 	payload := bytes.Repeat([]byte("compressible data "), 100)
-	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload))
+	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestGetAfterColdTransition(t *testing.T) {
 	}
 
 	payload := []byte("hello vexo, this is compressible text data for testing")
-	_, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload))
+	_, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func TestTransitionColdToHot(t *testing.T) {
 	}
 
 	payload := []byte("some data to compress then decompress")
-	meta, err := s.Put("photos", "doc.txt", bytes.NewReader(payload))
+	meta, err := s.Put("photos", "doc.txt", bytes.NewReader(payload), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestTransitionHotToInfrequent(t *testing.T) {
 	}
 
 	payload := []byte("some infrequent-tier data")
-	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload))
+	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader(payload), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +360,7 @@ func TestTransitionSameTierNoop(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")))
+	_, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -380,7 +380,7 @@ func TestDeleteColdObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")))
+	meta, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +414,7 @@ func TestStatShowsUpdatedTier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")))
+	_, err := s.Put("photos", "cat.jpg", bytes.NewReader([]byte("data")), "")
 	if err != nil {
 		t.Fatal(err)
 	}

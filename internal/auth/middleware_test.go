@@ -95,7 +95,7 @@ func newAuthTestServer(t *testing.T) (*httptest.Server, string, string) {
 	})
 	mux.HandleFunc("PUT /{bucket}/{key...}", func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		store.Put(r.PathValue("bucket"), r.PathValue("key"), bytes.NewReader(body))
+		store.Put(r.PathValue("bucket"), r.PathValue("key"), bytes.NewReader(body), "")
 		w.WriteHeader(http.StatusOK)
 	})
 	mux.HandleFunc("GET /{bucket}/{key...}", func(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +197,7 @@ func TestPolicyDeny(t *testing.T) {
 	ak := keys[0].AccessKey
 
 	bucketStore.Create("test-bkt")
-	store.Put("test-bkt", "cat.jpg", strings.NewReader("data"))
+	store.Put("test-bkt", "cat.jpg", strings.NewReader("data"), "")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{bucket}/{key...}", func(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +211,7 @@ func TestPolicyDeny(t *testing.T) {
 	})
 	mux.HandleFunc("PUT /{bucket}/{key...}", func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		store.Put(r.PathValue("bucket"), r.PathValue("key"), bytes.NewReader(body))
+		store.Put(r.PathValue("bucket"), r.PathValue("key"), bytes.NewReader(body), "")
 		w.WriteHeader(http.StatusOK)
 	})
 

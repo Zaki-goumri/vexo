@@ -3,6 +3,7 @@ import { useRouter, useRoute } from 'vue-router'
 import Icon from './Icon.vue'
 import { session, clearSession } from '../session'
 import { logout as apiLogout } from '../api'
+import logo from '../assets/logo-mark.png'
 
 const router = useRouter()
 const route = useRoute()
@@ -28,7 +29,7 @@ async function logout() {
 <template>
   <aside style="width: 232px; background: var(--sidebar-bg); display: flex; flex-direction: column; flex-shrink: 0;">
     <div style="display: flex; align-items: center; gap: 10px; padding: 20px 20px 16px;">
-      <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px;">V</div>
+      <img :src="logo" alt="vexo" style="width: 28px; height: 28px; object-fit: contain;" />
       <div style="font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.3px;">vexo</div>
     </div>
     <nav style="flex: 1; padding: 8px 0;">

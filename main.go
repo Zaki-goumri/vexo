@@ -3,10 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/Zaki-goumri/vexo/internal/api"
 	"github.com/Zaki-goumri/vexo/internal/auth"
 	"github.com/Zaki-goumri/vexo/internal/buckets"
+	"github.com/Zaki-goumri/vexo/internal/config"
 	"github.com/Zaki-goumri/vexo/internal/console"
 	"github.com/Zaki-goumri/vexo/internal/db"
 	"github.com/Zaki-goumri/vexo/internal/iam"
@@ -18,14 +21,20 @@ import (
 )
 
 func main() {
+	cfg := config.Load()
+
+	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		log.Fatal(err)
+	}
+
 	meta := &db.DB{}
-	if err := meta.Open("volume/.vexo.meta.db"); err != nil {
+	if err := meta.Open(filepath.Join(cfg.DataDir, ".vexo.meta.db")); err != nil {
 		log.Fatal(err)
 	}
 	defer meta.Close()
 
 	iamStore := iam.NewStore(meta)
-	if err := iamStore.BootstrapRoot("volume"); err != nil {
+	if err := iamStore.BootstrapRoot(cfg.DataDir); err != nil {
 		log.Fatal(err)
 	}
 
@@ -34,9 +43,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bucketStore := buckets.NewStore(meta, "volume")
-	store := storage.NewStore(meta, bucketStore, "volume")
+	bucketStore := buckets.NewStore(meta, cfg.DataDir)
+	store := storage.NewStore(meta, bucketStore, cfg.DataDir)
 	lcStore := lifecycle.NewStore(bucketStore)
+
+	shareSecret, err := console.LoadOrCreateShareSecret(cfg.DataDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	shareSigner := console.NewShareSigner(shareSecret)
 
 	apiSrv := api.NewServer(bucketStore, store, "")
 
@@ -47,7 +62,7 @@ func main() {
 	}
 
 	httpSrv := &http.Server{
-		Addr:    ":9090",
+		Addr:    cfg.APIAddr,
 		Handler: authMw,
 	}
 	go func() {
@@ -56,7 +71,7 @@ func main() {
 		}
 	}()
 
-	consoleSrv := console.NewServer(iamStore, policyStore, bucketStore, store, ":9091")
+	consoleSrv := console.NewServer(iamStore, policyStore, bucketStore, store, shareSigner, cfg.ConsoleAddr)
 	go func() {
 		if err := consoleSrv.ListenAndServe(); err != nil {
 			log.Printf("console: %v", err)
@@ -68,7 +83,7 @@ func main() {
 	defer ilScanner.Stop()
 
 	tcpOpts := p2p.TCPoptions{
-		ListenAddr: ":3001",
+		ListenAddr: cfg.P2PAddr,
 		Handshaker: p2p.NOPHandshakeFunc,
 		Decoder:    p2p.DefaultDecoder{},
 		OnPeer: func(p2p.Peer) error {

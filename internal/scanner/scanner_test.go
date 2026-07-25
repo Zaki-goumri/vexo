@@ -64,7 +64,7 @@ func assertGone(t *testing.T, store *storage.Store, bucket, key string) {
 func TestScanTransitionsOldHotToCold(t *testing.T) {
 	sc, bucketStore, store, lcStore := newTestEnv(t)
 	bucketStore.Create("photos")
-	store.Put("photos", "old.jpg", readCloser("data"))
+	store.Put("photos", "old.jpg", readCloser("data"), "")
 
 	past := time.Now().AddDate(0, 0, -45)
 	setObjectTimes(t, store, "photos", "old.jpg", past, past)
@@ -93,7 +93,7 @@ func TestScanTransitionsOldHotToCold(t *testing.T) {
 func TestScanRecentlyAccessedNoAction(t *testing.T) {
 	sc, bucketStore, store, lcStore := newTestEnv(t)
 	bucketStore.Create("photos")
-	store.Put("photos", "fresh.jpg", readCloser("data"))
+	store.Put("photos", "fresh.jpg", readCloser("data"), "")
 
 	now := time.Now()
 	setObjectTimes(t, store, "photos", "fresh.jpg", now, now)
@@ -116,7 +116,7 @@ func TestScanRecentlyAccessedNoAction(t *testing.T) {
 func TestScanExpiresOldObject(t *testing.T) {
 	sc, bucketStore, store, lcStore := newTestEnv(t)
 	bucketStore.Create("photos")
-	store.Put("photos", "ancient.jpg", readClocer("data"))
+	store.Put("photos", "ancient.jpg", readClocer("data"), "")
 
 	past := time.Now().AddDate(0, 0, -400)
 	setObjectTimes(t, store, "photos", "ancient.jpg", past, past)
@@ -142,7 +142,7 @@ func TestScanExpiresOldObject(t *testing.T) {
 func TestScanNoLifecycleNoAction(t *testing.T) {
 	sc, bucketStore, store, _ := newTestEnv(t)
 	bucketStore.Create("photos")
-	store.Put("photos", "cat.jpg", readCloser("data"))
+	store.Put("photos", "cat.jpg", readCloser("data"), "")
 
 	past := time.Now().AddDate(0, 0, -100)
 	setObjectTimes(t, store, "photos", "cat.jpg", past, past)
@@ -157,9 +157,9 @@ func TestScanMixedObjects(t *testing.T) {
 	sc, bucketStore, store, lcStore := newTestEnv(t)
 	bucketStore.Create("photos")
 
-	store.Put("photos", "fresh.jpg", readCloser("a"))
-	store.Put("photos", "old.jpg", readCloser("b"))
-	store.Put("photos", "expired.jpg", readClocer("c"))
+	store.Put("photos", "fresh.jpg", readCloser("a"), "")
+	store.Put("photos", "old.jpg", readCloser("b"), "")
+	store.Put("photos", "expired.jpg", readClocer("c"), "")
 
 	now := time.Now()
 	setObjectTimes(t, store, "photos", "fresh.jpg", now, now)
@@ -192,7 +192,7 @@ func TestScanMixedObjects(t *testing.T) {
 func TestScanInfrequentToCold(t *testing.T) {
 	sc, bucketStore, store, lcStore := newTestEnv(t)
 	bucketStore.Create("photos")
-	store.Put("photos", "doc.jpg", readCloser("data"))
+	store.Put("photos", "doc.jpg", readCloser("data"), "")
 
 	meta, _ := store.Stat("photos", "doc.jpg")
 	store.Transition("photos", "doc.jpg", storage.TierInfrequent)
@@ -222,8 +222,8 @@ func TestScanMultipleBuckets(t *testing.T) {
 	bucketStore.Create("bucket-b")
 	bucketStore.Create("bucket-c")
 
-	store.Put("bucket-a", "old.jpg", readCloser("a"))
-	store.Put("bucket-c", "old.jpg", readCloser("c"))
+	store.Put("bucket-a", "old.jpg", readCloser("a"), "")
+	store.Put("bucket-c", "old.jpg", readCloser("c"), "")
 
 	past := time.Now().AddDate(0, 0, -50)
 	setObjectTimes(t, store, "bucket-a", "old.jpg", past, past)
@@ -250,7 +250,7 @@ func TestScanMultipleBuckets(t *testing.T) {
 func TestStartStopScanner(t *testing.T) {
 	sc, bucketStore, store, lcStore := newTestEnv(t)
 	bucketStore.Create("photos")
-	store.Put("photos", "old.jpg", readCloser("data"))
+	store.Put("photos", "old.jpg", readCloser("data"), "")
 
 	past := time.Now().AddDate(0, 0, -50)
 	setObjectTimes(t, store, "photos", "old.jpg", past, past)
