@@ -9,11 +9,9 @@ RUN npm run build
 # ---- go build ----
 FROM golang:1.26-alpine AS go-builder
 WORKDIR /src
-COPY go.mod go.sum ./
-RUN go mod download
 COPY . .
 COPY --from=web-builder /src/internal/console/web/dist ./internal/console/web/dist
-RUN CGO_ENABLED=0 go build -o /out/vexo .
+RUN CGO_ENABLED=0 go build -mod=vendor -o /out/vexo .
 
 # ---- runtime ----
 FROM alpine:3.20

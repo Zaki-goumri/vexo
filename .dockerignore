@@ -1,0 +1,8 @@
+.git
+bin/
+volume/
+web/node_modules/
+web/dist/
+internal/console/web/dist/
+*.log
+.env
