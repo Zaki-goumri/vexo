@@ -1,3 +1,4 @@
 bin/
 volume/**/*
 .env
+site/

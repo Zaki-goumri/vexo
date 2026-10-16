@@ -1,0 +1,20 @@
+services:
+  vexo:
+    build: .
+    image: vexo:latest
+    env_file:
+      - .env
+    environment:
+      # .env's VEXO_DATA_DIR is for local/bare-metal use (a relative path);
+      # pin it here so the container always writes to the mounted volume below.
+      VEXO_DATA_DIR: /data
+    ports:
+      - "9090:9090"
+      - "9091:9091"
+      - "3001:3001"
+    volumes:
+      - vexo-data:/data
+    restart: unless-stopped
+
+volumes:
+  vexo-data:

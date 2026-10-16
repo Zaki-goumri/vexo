@@ -9,6 +9,8 @@ A single-node, S3-compatible object store written in Go. vexo speaks a real HTTP
 
 > Work in progress. See [Status](#status) for what's implemented vs. planned.
 
+📖 **Documentation:** https://zaki-goumri.github.io/vexo/
+
 ## Features
 
 - **S3 HTTP API** — `PUT`/`GET`/`HEAD`/`DELETE` for buckets and objects, `ListBuckets`, `ListObjectsV2`-style listing with prefix filtering, XML error responses shaped like AWS's. Served over `net/http`'s `ServeMux` on port `:9090`.
@@ -62,17 +64,16 @@ make test
 
 ## Configuration
 
-Ports are currently fixed (not yet flag-configurable):
+All settings are environment variables. Copy `.env.example` to `.env` to start. Full details in the [configuration docs](https://zaki-goumri.github.io/vexo/configuration/).
 
-| Service             | Address |
-| ------------------- | ------- |
-| S3 HTTP API         | `:9090` |
-| Web console         | `:9091` |
-| Internal TCP ingest | `:3001` |
-
-| Env var          | Required | Description                                                                                                             |
-| ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `VEXO_ROOT_USER` | No       | Username for the bootstrapped root IAM user. Defaults to `zaki`. Only read on first start, when no IAM users exist yet. |
+| Env var              | Default  | Description                                                    |
+| -------------------- | -------- | -------------------------------------------------------------- |
+| `VEXO_DATA_DIR`      | `volume` | Folder for metadata, objects and keys.                         |
+| `VEXO_API_ADDR`      | `:9090`  | S3 HTTP API address.                                           |
+| `VEXO_CONSOLE_ADDR`  | `:9091`  | Web console address.                                           |
+| `VEXO_P2P_ADDR`      | `:3001`  | Internal TCP ingest address.                                   |
+| `VEXO_ROOT_USER`     | `zaki`   | Root user name. First start only.                              |
+| `VEXO_ROOT_PASSWORD` | random   | Root console password. First start only.                       |
 
 ## Disk layout
 
@@ -134,6 +135,15 @@ internal/
   policy/                 # AWS IAM-style JSON policy engine
   scanner/                # Background goroutine driving lifecycle transitions
   storage/                # Object put/get/delete/list, tier transitions, gzip cold storage
+```
+
+## Documentation
+
+The docs site lives in `docs/` and is built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/). It deploys to GitHub Pages on every push to `main`.
+
+```bash
+pip install mkdocs-material
+mkdocs serve        # http://127.0.0.1:8000
 ```
 
 ## Development
